@@ -1,0 +1,23 @@
+{
+    "name": "oggetto/magento-opauth",
+    "type": "magento-module",
+    "description": "Oggetto Opauth extension for Magento",
+    "license": "OSL-3.0",
+    "authors": [
+        {
+            "name": "Dmitry Buryak",
+            "email": "b.dmitry@oggettoweb.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.0",
+        "magento-hackathon/magento-composer-installer": "*",
+        "opauth/opauth": "*",
+        "opauth/facebook": "*",
+        "opauth/google": "*",
+        "opauth/twitter": "*"
+    },
+    "extra": {
+        "package-xml": "package.xml"
+    }
+}
