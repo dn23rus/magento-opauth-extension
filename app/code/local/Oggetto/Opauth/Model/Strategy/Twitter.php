@@ -79,12 +79,7 @@ class Oggetto_Opauth_Model_Strategy_Twitter implements Oggetto_Opauth_Model_Stra
     public function getFormConfig()
     {
         return array(
-            'used' => true,
-            'data' => array(
-                'element_id' => 'opauth_twitter_id',
-                'name'       => 'opauth_twitter_id',
-                'label'      => Mage::helper('oggetto_opauth')->__('Twitter Id'),
-            ),
+            'label' => Mage::helper('oggetto_opauth')->__('Twitter Id'),
         );
     }
 

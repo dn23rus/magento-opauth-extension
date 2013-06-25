@@ -30,31 +30,16 @@
  * @subpackage Model
  * @author     Dmitry Buryak <b.dmitry@oggettoweb.com>
  */
-class Oggetto_Opauth_Model_Strategy_Facebook implements Oggetto_Opauth_Model_Strategy_Interface
+class Oggetto_Opauth_Model_Strategy_Facebook extends Oggetto_Opauth_Model_Strategy_Abstract
 {
-    const XML_CONFIG_KEY    = 'facebook';
-    const ATTR_CODE         = 'opauth_facebook_id';
+    const ATTR_CODE = 'opauth_facebook_id';
 
     /**
-     * @var bool
+     * Constructor
      */
-    protected $_isEnabled;
-
-    /**
-     * Check if facebook service provider is enabled
-     *
-     * @return bool
-     */
-    public function isEnabled()
+    public function __construct()
     {
-        if (null === $this->_isEnabled) {
-            $this->_isEnabled =
-                class_exists('FacebookStrategy')
-                && Mage::getStoreConfigFlag('opauth/' . self::XML_CONFIG_KEY . '/enabled')
-                && Mage::getStoreConfig('opauth/' . self::XML_CONFIG_KEY . '/app_id')
-                && Mage::getStoreConfig('opauth/' . self::XML_CONFIG_KEY . '/app_secret');
-        }
-        return $this->_isEnabled;
+        $this->_configKey = 'facebook';
     }
 
     /**
@@ -65,8 +50,8 @@ class Oggetto_Opauth_Model_Strategy_Facebook implements Oggetto_Opauth_Model_Str
     public function getConfig()
     {
         return array(
-            'app_id'        => Mage::getStoreConfig('opauth/' . self::XML_CONFIG_KEY . '/app_id'),
-            'app_secret'    => Mage::getStoreConfig('opauth/' . self::XML_CONFIG_KEY . '/app_secret'),
+            'app_id'        => Mage::getStoreConfig('opauth/' . $this->_getConfigKey() . '/app_id'),
+            'app_secret'    => Mage::getStoreConfig('opauth/' . $this->_getConfigKey() . '/app_secret'),
             'redirect_uri'  => Mage::getUrl('oggetto_opauth/login/facebook'),
             'display'       => 'page',
         );
@@ -80,12 +65,7 @@ class Oggetto_Opauth_Model_Strategy_Facebook implements Oggetto_Opauth_Model_Str
     public function getFormConfig()
     {
         return array(
-            'used' => true,
-            'data' => array(
-                'element_id' => 'opauth_facebook_id',
-                'name'       => 'opauth_facebook_id',
-                'label'      => Mage::helper('oggetto_opauth')->__('Facebook Id'),
-            ),
+            'label' => Mage::helper('oggetto_opauth')->__('Facebook Id'),
         );
     }
 
@@ -97,5 +77,22 @@ class Oggetto_Opauth_Model_Strategy_Facebook implements Oggetto_Opauth_Model_Str
     public function getAttributeCode()
     {
         return self::ATTR_CODE;
+    }
+
+    /**
+     * Normalize response info
+     *
+     * @param array $data response data
+     * @return array
+     */
+    public function normalizeInfo(array $data)
+    {
+        return array(
+            'provider'      => $data['provider'],
+            'uid'           => $data['uid'],
+            'email'         => $data['info']['email'],
+            'first_name'    => $data['info']['first_name'],
+            'last_name'     => $data['info']['last_name'],
+        );
     }
 }

@@ -77,7 +77,9 @@ class Oggetto_Opauth_Model_Strategy_Google implements Oggetto_Opauth_Model_Strat
      */
     public function getFormConfig()
     {
-        return array();
+        return array(
+            'enabled' => false,
+        );
     }
 
     /**

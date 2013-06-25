@@ -39,7 +39,7 @@ class Oggetto_Opauth_LoginController extends Mage_Core_Controller_Front_Action
      */
     public function indexAction()
     {
-        if (Mage::getSingleton('customer/session')->isLoggedIn()) {
+        if ($this->_getSession()->isLoggedIn()) {
             $this->_redirect('customer/account/');
             return;
         }
@@ -81,11 +81,12 @@ class Oggetto_Opauth_LoginController extends Mage_Core_Controller_Front_Action
             return;
         }
 
-        $customer = Mage::getModel('oggetto_opauth/customer');
+        $responseHandler = Mage::getModel('oggetto_opauth/responseHandler');
         try {
-//            $customer->setUserData($data['auth']['info']);
-            $customer->setResponseData($data['auth']);
-            $customer->createAndLogin($this->getRequest(), $this->_getSession());
+            $responseHandler->setResponseData($data['auth']);
+            if (!$responseHandler->isRequireGetEmail()) {
+                $responseHandler->createAndLogin($this->getRequest());
+            }
             $this->_redirect('customer/account');
             return;
         } catch (Mage_Core_Exception $e) {
@@ -107,11 +108,21 @@ class Oggetto_Opauth_LoginController extends Mage_Core_Controller_Front_Action
         Mage::getSingleton('oggetto_opauth/opauth')->callInternalCallback('Facebook');
     }
 
+    /**
+     * Google action
+     *
+     * @return void
+     */
     public function googleAction()
     {
         Mage::getSingleton('oggetto_opauth/opauth')->callInternalCallback('Google');
     }
 
+    /**
+     * Twitter action
+     *
+     * @return void
+     */
     public function twitterAction()
     {
         Mage::getSingleton('oggetto_opauth/opauth')->callInternalCallback('Twitter');

@@ -43,25 +43,21 @@ class Oggetto_Opauth_Block_Adminhtml_Customer_Edit_Tab_Opauth extends Mage_Admin
         $form = new Varien_Data_Form();
         $customer = Mage::registry('current_customer');
 
-        $fildset = $form->addFieldset('provider_ids', array(
+        $fieldset = $form->addFieldset('provider_ids', array(
             'legend' => $this->_getHelper()->__('Opauth Providers'),
         ));
 
-        foreach ($strategies = Mage::getSingleton('oggetto_opauth/opauth')->getStrategies() as $strategy) {
-            /* @var $strategy Oggetto_Opauth_Model_Strategy_Interface */
-            $cnf = $strategy->getFormConfig();
-            if (isset($cnf['used']) && $cnf['used']) {
-                $data = array_merge(array(
-                    'element_id' => null,
-                    'name'       => null,
-                    'label'      => null,
-                ), isset($cnf['data'])? $cnf['data'] : array());
-                $fildset->addField($data['element_id'], 'text', array(
-                    'name'       => $data['name'],
-                    'label'      => $data['label'],
-                    'readonly'   => true,
-                ));
+        foreach ($strategies = Mage::getSingleton('oggetto_opauth/opauth')->getProviders() as $provider) {
+            /* @var $provider Oggetto_Opauth_Model_Strategy_Interface */
+            $cnf = $provider->getFormConfig();
+            if (isset($cnf['enabled']) && !$cnf['enabled']) {
+                continue;
             }
+            $fieldset->addField($provider->getAttributeCode(), 'text', array(
+                'name'      => $provider->getAttributeCode(),
+                'label'     => !empty($cnf['label']) ? $cnf['label'] : $this->_getHelper()->__('Default label'),
+                'readonly'  => true,
+            ));
         }
 
         $form->setValues($customer->getData());

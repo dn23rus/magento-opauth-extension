@@ -42,29 +42,38 @@ class Oggetto_Opauth_Model_Resource_Customer extends Mage_Customer_Model_Resourc
      */
     public function loadByOpauthProvider(Mage_Customer_Model_Customer $customer, $providerAttr, $id)
     {
-        $adapter = $this->_getReadAdapter();
-        $bind    = array('opauth_provider_id' => $id);
-        $select  = $adapter->select()
-            ->from($this->getEntityTable(), array($this->getEntityIdField()))
-            ->where($providerAttr . ' = :opauth_provider_id');
+        if ($attr = $this->getAttribute($providerAttr)) {
+            $bind = array(
+                'attribute_id' => (int) $attr->getId(),
+                'opauth_provider_id' => $id,
+            );
+            $select = $this->_getReadAdapter()->select()
+                ->from(array('e' => $this->getEntityTable()), array($this->getEntityIdField()))
+                ->joinLeft(
+                    array('attr_table' => $attr->getBackendTable()),
+                    '`attr_table`.`entity_id`=`e`.`entity_id` AND `attr_table`.`entity_type_id`=`e`.`entity_type_id`',
+                     array()
+                )
+                ->where('attr_table.value = :opauth_provider_id')
+                ->where('attr_table.attribute_id = :attribute_id');
 
-        if ($customer->getSharingConfig()->isWebsiteScope()) {
-            if (!$customer->hasData('website_id')) {
-                Mage::throwException(
-                    Mage::helper('customer')->__('Customer website ID must be specified when using the website scope')
-                );
+            if ($customer->getSharingConfig()->isWebsiteScope()) {
+                if (!$customer->hasData('website_id')) {
+                    Mage::throwException(Mage::helper('customer')->__(
+                        'Customer website ID must be specified when using the website scope'
+                    ));
+                }
+                $bind['website_id'] = (int) $customer->getData('website_id');
+                $select->where('`e`.`website_id` = :website_id');
             }
-            $bind['website_id'] = (int) $customer->getWebsiteId();
-            $select->where('website_id = :website_id');
-        }
 
-        $customerId = $adapter->fetchOne($select, $bind);
-        if ($customerId) {
-            $this->load($customer, $customerId);
-        } else {
-            $customer->setData(array());
+            $customerId = $this->_getReadAdapter()->fetchOne($select, $bind);
+            if ($customerId) {
+                $this->load($customer, $customerId);
+                return $this;
+            }
         }
-
+        $customer->setData(array());
         return $this;
     }
 }

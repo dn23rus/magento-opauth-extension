@@ -33,13 +33,29 @@ $setup = new Mage_Customer_Model_Resource_Setup('core_setup');
 $installer->startSetup();
 $installer->getConnection()->beginTransaction();
 try {
-    $setup->addAttribute('customer', 'opauth_facebook_id', array(
+    $setup->addAttribute('customer', Oggetto_Opauth_Model_Strategy_Facebook::ATTR_CODE, array(
         'label'             => 'Facebook Id',
         'required'          => 0,
         'visible'           => 1,
         'sort_order'        => 200,
         'input'             => 'text',
-        'adminhtml_only'    => 1.
+        'adminhtml_only'    => 1,
+    ));
+    $setup->addAttribute('customer', Oggetto_Opauth_Model_Strategy_Google::ATTR_CODE, array(
+        'label'             => 'Google Id',
+        'required'          => 0,
+        'visible'           => 1,
+        'sort_order'        => 200,
+        'input'             => 'text',
+        'adminhtml_only'    => 1,
+    ));
+    $setup->addAttribute('customer', Oggetto_Opauth_Model_Strategy_Twitter::ATTR_CODE, array(
+        'label'             => 'Twitter Id',
+        'required'          => 0,
+        'visible'           => 1,
+        'sort_order'        => 200,
+        'input'             => 'text',
+        'adminhtml_only'    => 1,
     ));
 } catch (Exception $e) {
     $installer->getConnection()->rollBack();

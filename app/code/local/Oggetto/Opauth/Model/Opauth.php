@@ -22,7 +22,10 @@
  * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
-require_once Mage::getBaseDir() . '/vendor/autoload.php';
+$autoloader = Mage::getBaseDir() . DS .'vendor' . DS .'autoload.php';
+if (file_exists($autoloader)) {
+    require_once $autoloader;
+}
 
 /**
  * Opauth
@@ -52,7 +55,7 @@ class Oggetto_Opauth_Model_Opauth
     /**
      * @var array
      */
-    protected $_strategies = array();
+    protected $_providers = array();
 
     /**
      * Constructor
@@ -63,8 +66,8 @@ class Oggetto_Opauth_Model_Opauth
 
         // add default strategies
         $this->addStrategy('Facebook');
-        $this->addStrategy('Google');
-        $this->addStrategy('Twitter');
+//        $this->addStrategy('Google');
+//        $this->addStrategy('Twitter');
     }
 
     /**
@@ -130,22 +133,49 @@ class Oggetto_Opauth_Model_Opauth
         }
 
         if ($instance->isEnabled()) {
-            $this->_config['Strategy'][$name]  = $instance->getConfig();
-            $this->_classes[strtolower($name)] = $name;
-            $this->_strategies[strtolower($name)] = $instance;
+            $this->_config['Strategy'][$name]    = $instance->getConfig();
+            $this->_classes[strtolower($name)]   = $name;
+            $this->_providers[strtolower($name)] = $instance;
         }
 
         return $this;
     }
 
     /**
-     * Installed strategies
+     * Get providers
      *
      * @return array
      */
-    public function getStrategies()
+    public function getProviders()
     {
-        return $this->_strategies;
+        return $this->_providers;
+    }
+
+    /**
+     * Get provider
+     *
+     * @param string $code strategy code
+     * @return null|Oggetto_Opauth_Model_Strategy_Interface
+     */
+    public function getProvider($code)
+    {
+        $code = strtolower($code);
+        if ($this->hasProvider($code)) {
+            return $this->_providers[$code];
+        }
+        return null;
+    }
+
+    /**
+     * Check if given provider exists
+     *
+     * @param string $code strategy code
+     * @return bool
+     */
+    public function hasProvider($code)
+    {
+        $code = strtolower($code);
+        return array_key_exists($code, $this->_providers);
     }
 
     /**
