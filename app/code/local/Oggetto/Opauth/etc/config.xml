@@ -77,6 +77,13 @@
                 </args>
             </oggetto_opauth>
         </routers>
+        <layout>
+            <updates>
+                <oggetto_opauth>
+                    <file>oggetto_opauth.xml</file>
+                </oggetto_opauth>
+            </updates>
+        </layout>
     </frontend>
     <adminhtml>
         <layout>

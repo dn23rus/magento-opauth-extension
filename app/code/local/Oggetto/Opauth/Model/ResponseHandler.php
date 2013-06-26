@@ -125,7 +125,7 @@ class Oggetto_Opauth_Model_ResponseHandler
     public function getResponseInfo()
     {
         if (null === $this->_info) {
-            $this->_info = (array) $this->_getProvider()->normalizeInfo($this->getResponseData());
+            $this->_info = (array) $this->getProvider()->normalizeInfo($this->getResponseData());
         }
         return $this->_info;
     }
@@ -196,10 +196,10 @@ class Oggetto_Opauth_Model_ResponseHandler
     /**
      * Get provider instance
      *
-     * @return null|Oggetto_Opauth_Model_Strategy_Interface
+     * @return null|Oggetto_Opauth_Model_Strategy_Interface|Oggetto_Opauth_Model_Strategy_Abstract
      * @throws Exception
      */
-    protected function _getProvider()
+    public function getProvider()
     {
         if (null === $this->_provider) {
             $data = $this->getResponseData();
@@ -216,6 +216,7 @@ class Oggetto_Opauth_Model_ResponseHandler
      *
      * @param Mage_Core_Controller_Request_Http $request request instance
      * @return Oggetto_Opauth_Model_ResponseHandler
+     * @throws Oggetto_Opauth_Exception
      */
     public function createAndLogin($request)
     {
@@ -223,7 +224,10 @@ class Oggetto_Opauth_Model_ResponseHandler
             $this->login();
         } catch (Oggetto_Opauth_Exception $e) {
             if ($e->getCode() === self::EXCEPTION_UNABLE_TO_LOGIN) {
-                $this->getSession()->setCustomerAsLoggedIn($this->create($request));
+                $this->create($request);
+                $this->getSession()->setCustomerAsLoggedIn($this->getCustomer());
+            } else {
+                throw $e;
             }
         }
         return $this;
@@ -243,14 +247,14 @@ class Oggetto_Opauth_Model_ResponseHandler
             $info     = $this->getResponseInfo();
             $customer = $this->getCustomer();
             $resource = $customer->getResource();
-            $attrCode = $this->_getProvider()->getAttributeCode();
+            $attrCode = $this->getProvider()->getAttributeCode();
 
-            $customer->setData('website_id', (Mage::app()->getWebsite()->getId()));
-
+            $customer->setData('website_id', Mage::app()->getWebsite()->getId());
             $resource->loadByOpauthProvider($customer, $attrCode, $info['uid']);
             if ($id = $customer->getEntityId()) {
                 $session->loginById($id);
             } else {
+                $customer->setData('website_id', Mage::app()->getWebsite()->getId());
                 $customer->loadByEmail($info['email']);
                 if ($id = $customer->getEntityId()) {
                     $session->loginById($id);
@@ -292,7 +296,7 @@ class Oggetto_Opauth_Model_ResponseHandler
             ->setData('account_confirmation', 1)
             ->setData('password', $customer->generatePassword())
             ->setData('confirmation', $customer->getData('password'))
-            ->setData($this->_getProvider()->getAttributeCode(), $info['uid']);
+            ->setData($this->getProvider()->getAttributeCode(), $info['uid']);
 
         $errors = $this->_validateCustomer($request, $customer);
         if ($errors !== true) {

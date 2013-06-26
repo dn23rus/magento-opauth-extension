@@ -70,4 +70,14 @@ abstract class Oggetto_Opauth_Model_Strategy_Abstract implements Oggetto_Opauth_
         }
         return $this->_isEnabled;
     }
+
+    /**
+     * Redirect url for additional actions
+     *
+     * @return string
+     */
+    public function getRedirectRoute()
+    {
+        return '';
+    }
 }

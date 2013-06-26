@@ -72,6 +72,7 @@ class Oggetto_Opauth_LoginController extends Mage_Core_Controller_Front_Action
         if (!$data) {
             $this->_getSession()->addError($this->__('Can\'t authenticate with empty Opauth response'));
             $this->_redirect('customer/account/login');
+            return;
         }
 
         $reason = null;
@@ -86,6 +87,10 @@ class Oggetto_Opauth_LoginController extends Mage_Core_Controller_Front_Action
             $responseHandler->setResponseData($data['auth']);
             if (!$responseHandler->isRequireGetEmail()) {
                 $responseHandler->createAndLogin($this->getRequest());
+            } else {
+                $this->_getSession()->setData('opauth_response_data_dump', $data);
+                $this->_redirect($responseHandler->getProvider()->getRedirectRoute());
+                return;
             }
             $this->_redirect('customer/account');
             return;
@@ -98,6 +103,7 @@ class Oggetto_Opauth_LoginController extends Mage_Core_Controller_Front_Action
         $this->_redirect('customer/account/login');
     }
 
+
     /**
      * Facebook action
      *
@@ -105,7 +111,7 @@ class Oggetto_Opauth_LoginController extends Mage_Core_Controller_Front_Action
      */
     public function facebookAction()
     {
-        Mage::getSingleton('oggetto_opauth/opauth')->callInternalCallback('Facebook');
+        Mage::getSingleton('oggetto_opauth/opauth')->addStrategy('Facebook')->callInternalCallback('Facebook');
     }
 
     /**

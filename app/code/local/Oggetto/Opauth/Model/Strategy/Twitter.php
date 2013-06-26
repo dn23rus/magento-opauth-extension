@@ -30,32 +30,17 @@
  * @subpackage Model
  * @author     Dmitry Buryak <b.dmitry@oggettoweb.com>
  */
-class Oggetto_Opauth_Model_Strategy_Twitter implements Oggetto_Opauth_Model_Strategy_Interface
+class Oggetto_Opauth_Model_Strategy_Twitter extends Oggetto_Opauth_Model_Strategy_Abstract
 {
-    const XML_CONFIG_KEY    = 'twitter';
-    const ATTR_CODE         = 'opauth_twitter_id';
-
-    /**
-     * @var bool
-     */
-    protected $_isEnabled;
+    const ATTR_CODE = 'opauth_twitter_id';
 
 
     /**
-     * Check if service provider is enabled
-     *
-     * @return bool
+     * Constructor
      */
-    public function isEnabled()
+    public function __construct()
     {
-        if (null === $this->_isEnabled) {
-            $this->_isEnabled =
-                class_exists('TwitterStrategy')
-                && Mage::getStoreConfigFlag('opauth/' . self::XML_CONFIG_KEY . '/enabled')
-                && Mage::getStoreConfig('opauth/' . self::XML_CONFIG_KEY . '/app_id')
-                && Mage::getStoreConfig('opauth/' . self::XML_CONFIG_KEY . '/app_secret');
-        }
-        return $this->_isEnabled;
+        $this->_configKey = 'twitter';
     }
 
     /**
@@ -66,8 +51,8 @@ class Oggetto_Opauth_Model_Strategy_Twitter implements Oggetto_Opauth_Model_Stra
     public function getConfig()
     {
         return array(
-            'key'    => Mage::getStoreConfig('opauth/' . self::XML_CONFIG_KEY . '/app_id'),
-            'secret' => Mage::getStoreConfig('opauth/' . self::XML_CONFIG_KEY . '/app_secret'),
+            'key'    => Mage::getStoreConfig('opauth/' . $this->_getConfigKey() . '/app_id'),
+            'secret' => Mage::getStoreConfig('opauth/' . $this->_getConfigKey() . '/app_secret'),
         );
     }
 
@@ -83,15 +68,6 @@ class Oggetto_Opauth_Model_Strategy_Twitter implements Oggetto_Opauth_Model_Stra
         );
     }
 
-    public function prepareResponseData($data)
-    {
-        $default = array(
-            'firstname' => null,
-            'lastname'  => null,
-            'email'     => null,
-        );
-    }
-
     /**
      * Attribute code
      *
@@ -100,5 +76,26 @@ class Oggetto_Opauth_Model_Strategy_Twitter implements Oggetto_Opauth_Model_Stra
     public function getAttributeCode()
     {
         return self::ATTR_CODE;
+    }
+
+    /**
+     * Normalize response info
+     *
+     * @param array $data response data
+     * @return array
+     */
+    public function normalizeInfo(array $data)
+    {
+        // TODO: Implement normalizeInfo() method.
+    }
+
+    /**
+     * Redirect url for additional actions
+     *
+     * @return string
+     */
+    public function getRedirectRoute()
+    {
+        return 'oggetto_opauth/twitter/askEmail';
     }
 }

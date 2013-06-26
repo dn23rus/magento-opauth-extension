@@ -50,12 +50,16 @@ class Oggetto_Opauth_Model_Opauth
     /**
      * @var array
      */
-    protected $_classes;
+    protected $_providers = array();
 
     /**
      * @var array
      */
-    protected $_providers = array();
+    protected $_strategyMap = array(
+        'facebook'  => 'Facebook',
+        'google'    => 'Google',
+        'twitter'   => 'Twitter',
+    );
 
     /**
      * Constructor
@@ -65,7 +69,7 @@ class Oggetto_Opauth_Model_Opauth
         $this->_initDefaultConfigs();
 
         // add default strategies
-        $this->addStrategy('Facebook');
+//        $this->addStrategy('Facebook');
 //        $this->addStrategy('Google');
 //        $this->addStrategy('Twitter');
     }
@@ -87,11 +91,14 @@ class Oggetto_Opauth_Model_Opauth
     /**
      * Run authentication
      *
-     * @param string $providerCode provide code
+     * @param string|null $providerCode provide code
      * @return Oggetto_Opauth_Model_Opauth
      */
-    public function run($providerCode)
+    public function run($providerCode = null)
     {
+        if (null !== $providerCode) {
+            $this->addStrategy($providerCode);
+        }
         $opauth = $this->getOpauthModel();
         $opauth->env['request_uri'] = "/opauth/login/{$providerCode}/";
         $opauth->run();
@@ -105,37 +112,43 @@ class Oggetto_Opauth_Model_Opauth
      * @param Oggetto_Opauth_Model_Strategy_Interface $class strategy class
      * @return Oggetto_Opauth_Model_Opauth
      * @throws Oggetto_Opauth_Exception
+     * @throws Exception
      */
     public function addStrategy($name, $class = null)
     {
-        $class = $class ? $class : 'Oggetto_Opauth_Model_Strategy_' . $name;
+        $name = strtolower($name);
+        if (array_key_exists($name, $this->_providers)) {
+            return $this;
+        }
+        if (null === $class) {
+            if (array_key_exists($name, $this->_strategyMap)) {
+                $class = 'Oggetto_Opauth_Model_Strategy_' . $this->_strategyMap[$name];
+            } else {
+                /** @var $exception Oggetto_Opauth_Exception */
+                $exception = Mage::exception(
+                    'Oggetto_Opauth',
+                    sprintf('Opauth \'%\' strategy is not supported', $name)
+                );
+                throw $exception;
+            }
+        }
         /** @var $instance Oggetto_Opauth_Model_Strategy_Interface */
         if (is_string($class)) {
             $instance = new $class;
         } elseif (is_object($class)) {
             $instance = $class;
         } else {
-            /** @var $exception Oggetto_Opauth_Exception */
-            $exception = Mage::exception(
-                'Oggetto_Opauth',
-                sprintf('%s require \'class\' as string or object', __METHOD__)
-            );
-            throw $exception;
+            throw new Exception(sprintf('%s require \'class\' as string or object', __METHOD__));
         }
-
         if (!$instance instanceof Oggetto_Opauth_Model_Strategy_Interface) {
-            /** @var $exception Oggetto_Opauth_Exception */
-            $exception = Mage::exception(
-                'Oggetto_Opauth',
-                "'$name' strategy must implement Oggetto_Opauth_Model_Strategy_Interface"
+            throw new Exception(
+                sprintf('\'%s\' strategy must implement Oggetto_Opauth_Model_Strategy_Interface', $name)
             );
-            throw $exception;
         }
 
         if ($instance->isEnabled()) {
-            $this->_config['Strategy'][$name]    = $instance->getConfig();
-            $this->_classes[strtolower($name)]   = $name;
-            $this->_providers[strtolower($name)] = $instance;
+            $this->_providers[$name] = $instance;
+            $this->_config['Strategy'][$this->_strategyMap[$name]] = $instance->getConfig();
         }
 
         return $this;
@@ -159,9 +172,8 @@ class Oggetto_Opauth_Model_Opauth
      */
     public function getProvider($code)
     {
-        $code = strtolower($code);
         if ($this->hasProvider($code)) {
-            return $this->_providers[$code];
+            return $this->_providers[strtolower($code)];
         }
         return null;
     }
@@ -192,7 +204,6 @@ class Oggetto_Opauth_Model_Opauth
             'security_iteration' => Mage::getStoreConfig('opauth/general/security_iteration'),
             'security_timeout'   => Mage::getStoreConfig('opauth/general/security_timeout'),
             'security_salt'      => Mage::getStoreConfig('opauth/general/security_salt'),
-            'debug'              => Mage::getStoreConfigFlag('opauth/general/debug'),
         );
         return $this;
     }
@@ -205,7 +216,7 @@ class Oggetto_Opauth_Model_Opauth
     public function getResponseData()
     {
         $response  = array();
-        $transport = $this->getOpauthModel()->env['callback_transport'];
+        $transport = $this->_config['callback_transport'];
         switch ($transport) {
             case 'session':
                 if (!session_id()) {
@@ -228,6 +239,9 @@ class Oggetto_Opauth_Model_Opauth
                 break;
             default:
                 break;
+        }
+        if (isset($response['auth']['provider'])) {
+            $this->addStrategy($response['auth']['provider']);
         }
         return $response;
     }
@@ -254,22 +268,18 @@ class Oggetto_Opauth_Model_Opauth
      *
      * @param string $code strategy code
      * @return OpauthStrategy
-     * @throws Oggetto_Opauth_Exception
+     * @throws Exception
      */
     public function getStrategyInstance($code)
     {
         $code = strtolower($code);
-        if (!isset($this->_classes[$code])) {
-            /* @var $exception Oggetto_Opauth_Exception */
-            $exception = Mage::exception(
-                'Oggetto_Opauth',
-                sprintf('Unable to retrieve \'%s\' strategy instance', $code)
-            );
-            throw $exception;
+        if (!isset($this->_strategyMap[$code])) {
+            throw new Exception(sprintf('Unable to retrieve \'%s\' strategy instance', $code));
         }
-        $class  = $this->_classes[$code] . 'Strategy';
+        $this->addStrategy($code);
+        $class  = $this->_strategyMap[$code] . 'Strategy';
         $opauth = $this->getOpauthModel();
-        $conf   = $opauth->env['Strategy'][$this->_classes[$code]];
+        $conf   = $opauth->env['Strategy'][$this->_strategyMap[$code]];
 
         return new $class($conf, $opauth->env);
     }
