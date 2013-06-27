@@ -52,6 +52,8 @@ class Oggetto_Opauth_LoginController extends Mage_Core_Controller_Front_Action
 
         try {
             Mage::getSingleton('oggetto_opauth/opauth')->run($providerCode);
+        } catch (Oggetto_Opauth_Exception $e) {
+            $this->_getSession()->addError($e->getMessage());
         } catch (Exception $e) {
             Mage::logException($e);
             $this->_getSession()->addError($this->__('Opauth API error.'));
@@ -103,6 +105,15 @@ class Oggetto_Opauth_LoginController extends Mage_Core_Controller_Front_Action
         $this->_redirect('customer/account/login');
     }
 
+    /**
+     * Reject action
+     *
+     * @return void
+     */
+    public function rejectAction()
+    {
+
+    }
 
     /**
      * Facebook action
@@ -111,7 +122,7 @@ class Oggetto_Opauth_LoginController extends Mage_Core_Controller_Front_Action
      */
     public function facebookAction()
     {
-        Mage::getSingleton('oggetto_opauth/opauth')->addStrategy('Facebook')->callInternalCallback('Facebook');
+        $this->_callStrategyInternalCallback('Facebook');
     }
 
     /**
@@ -121,7 +132,7 @@ class Oggetto_Opauth_LoginController extends Mage_Core_Controller_Front_Action
      */
     public function googleAction()
     {
-        Mage::getSingleton('oggetto_opauth/opauth')->callInternalCallback('Google');
+        $this->_callStrategyInternalCallback('Google');
     }
 
     /**
@@ -131,7 +142,20 @@ class Oggetto_Opauth_LoginController extends Mage_Core_Controller_Front_Action
      */
     public function twitterAction()
     {
-        Mage::getSingleton('oggetto_opauth/opauth')->callInternalCallback('Twitter');
+        $this->_callStrategyInternalCallback('Twitter');
+    }
+
+    /**
+     * Call strategy internal callback
+     *
+     * @param string $strategy strategy
+     * @return void
+     */
+    protected function _callStrategyInternalCallback($strategy)
+    {
+        Mage::getSingleton('oggetto_opauth/opauth')
+            ->addStrategy($strategy)
+            ->callInternalCallback($strategy);
     }
 
     /**

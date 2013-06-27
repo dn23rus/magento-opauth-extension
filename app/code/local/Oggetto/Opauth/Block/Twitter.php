@@ -32,6 +32,11 @@
  */
 class Oggetto_Opauth_Block_Twitter extends Mage_Core_Block_Template
 {
+    /**
+     * Form action url
+     *
+     * @return string
+     */
     public function getPostActionUrl()
     {
         return $this->getUrl('oggetto_opauth/twitter/askEmailPost');

@@ -32,8 +32,9 @@
  */
 class Oggetto_Opauth_Model_Strategy_Twitter extends Oggetto_Opauth_Model_Strategy_Abstract
 {
-    const ATTR_CODE = 'opauth_twitter_id';
-
+    const ATTR_CODE                 = 'opauth_twitter_id';
+    const XML_PATH_CONFIRM_EMAIL    = 'opauth/twitter/confirm_email_template';
+    const XML_PATH_EMAIL_SENDER     = 'opauth/twitter/confirm_email_identity';
 
     /**
      * Constructor
@@ -86,7 +87,9 @@ class Oggetto_Opauth_Model_Strategy_Twitter extends Oggetto_Opauth_Model_Strateg
      */
     public function normalizeInfo(array $data)
     {
-        // TODO: Implement normalizeInfo() method.
+        return array(
+
+        );
     }
 
     /**
@@ -97,5 +100,74 @@ class Oggetto_Opauth_Model_Strategy_Twitter extends Oggetto_Opauth_Model_Strateg
     public function getRedirectRoute()
     {
         return 'oggetto_opauth/twitter/askEmail';
+    }
+
+    /**
+     * Confirm email
+     *
+     * @param string $email   email
+     * @param string $name    name
+     * @param int    $storeId store id
+     * @return Oggetto_Opauth_Model_Strategy_Twitter
+     */
+    public function sendConfirmationEmail($email, $name, $storeId)
+    {
+        $emailInfo = Mage::getModel('core/email_info');
+        $emailInfo->addTo($email, $name);
+
+        $mailer = Mage::getModel('core/email_template_mailer');
+        $mailer
+            ->setStoreId($storeId)
+            ->addEmailInfo($emailInfo)
+            ->setSender(Mage::getStoreConfig(self::XML_PATH_EMAIL_SENDER, $storeId))
+            ->setTemplateId(Mage::getStoreConfig(self::XML_PATH_CONFIRM_EMAIL, $storeId))
+            ->setTemplateParams(array(
+                'name'          => $name,
+                'confirm_url'   => Mage::getUrl('oggetto_opauth/twitter/login', array('token' => $this->getToken())),
+                'reject_url'    => Mage::getUrl('oggetto_opauth/twitter/reject'),
+            ));
+
+        $mailer->send();
+        return $this;
+    }
+
+    /**
+     * Get token
+     *
+     * @return string
+     */
+    public function getToken()
+    {
+        $token = Mage::helper('core')->getRandomString(20, 'abcdefghijklmnopqrstuvwxyz1234567890');
+        Mage::getSingleton('core/session')->setData('twitter_confirm_email_token', $token);
+        return $token;
+    }
+
+    /**
+     * Verify token
+     *
+     * @param string $token     token
+     * @param bool   $autoClear clear after verifying
+     * @return bool
+     */
+    public function verifyToken($token, $autoClear = true)
+    {
+        $storedToken = Mage::getSingleton('core/session')->getData('twitter_confirm_email_token');
+        $result = (0 === strcasecmp($token, $storedToken));
+        if ($autoClear) {
+            $this->clearToken();
+        }
+        return $result;
+    }
+
+    /**
+     * Clear token
+     *
+     * @return Oggetto_Opauth_Model_Strategy_Twitter
+     */
+    public function clearToken()
+    {
+        Mage::getSingleton('core/session')->unsetData('twitter_confirm_email_token');
+        return $this;
     }
 }

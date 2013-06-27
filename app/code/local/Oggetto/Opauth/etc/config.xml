@@ -30,6 +30,20 @@
         </Oggetto_Opauth>
     </modules>
     <global>
+        <opauth>
+            <strategies>
+                <facebook>
+                    <strategy>Facebook</strategy>
+                    <class>Oggetto_Opauth_Model_Strategy_Facebook</class>
+                </facebook>
+                <google>
+                    <strategy>Google</strategy>
+                </google>
+                <twitter>
+                    <strategy>Twitter</strategy>
+                </twitter>
+            </strategies>
+        </opauth>
         <models>
             <oggetto_opauth>
                 <class>Oggetto_Opauth_Model</class>
@@ -58,6 +72,15 @@
                 <class>Oggetto_Opauth_Block</class>
             </oggetto_opauth>
         </blocks>
+        <template>
+            <email>
+                <opauth_twitter_confirm_email_template translate="label" module="oggetto_opauth">
+                    <label>Twitter email confirmation</label>
+                    <file>oggetto_opauth/twitter_confirm_email.html</file>
+                    <type>html</type>
+                </opauth_twitter_confirm_email_template>
+            </email>
+        </template>
     </global>
     <default>
         <opauth>

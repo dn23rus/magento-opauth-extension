@@ -66,12 +66,15 @@ class Oggetto_Opauth_Model_Opauth
      */
     public function __construct()
     {
-        $this->_initDefaultConfigs();
-
-        // add default strategies
-//        $this->addStrategy('Facebook');
-//        $this->addStrategy('Google');
-//        $this->addStrategy('Twitter');
+        // init default configs
+        $this->_config = array(
+            'callback_transport' => 'session',
+            'path'               => '/opauth/login/',
+            'callback_url'       => Mage::getUrl('oggetto_opauth/login/callback'),
+            'security_iteration' => Mage::getStoreConfig('opauth/general/security_iteration'),
+            'security_timeout'   => Mage::getStoreConfig('opauth/general/security_timeout'),
+            'security_salt'      => Mage::getStoreConfig('opauth/general/security_salt'),
+        );
     }
 
     /**
@@ -116,6 +119,7 @@ class Oggetto_Opauth_Model_Opauth
      */
     public function addStrategy($name, $class = null)
     {
+        $origName = $name;
         $name = strtolower($name);
         if (array_key_exists($name, $this->_providers)) {
             return $this;
@@ -127,10 +131,12 @@ class Oggetto_Opauth_Model_Opauth
                 /** @var $exception Oggetto_Opauth_Exception */
                 $exception = Mage::exception(
                     'Oggetto_Opauth',
-                    sprintf('Opauth \'%\' strategy is not supported', $name)
+                    Mage::helper('oggetto_opauth')->__('Opauth \'%\' strategy is not supported', $name)
                 );
                 throw $exception;
             }
+        } else {
+            $this->_strategyMap[$name] = $origName;
         }
         /** @var $instance Oggetto_Opauth_Model_Strategy_Interface */
         if (is_string($class)) {
@@ -142,7 +148,7 @@ class Oggetto_Opauth_Model_Opauth
         }
         if (!$instance instanceof Oggetto_Opauth_Model_Strategy_Interface) {
             throw new Exception(
-                sprintf('\'%s\' strategy must implement Oggetto_Opauth_Model_Strategy_Interface', $name)
+                sprintf('\'%s\' strategy must implement Oggetto_Opauth_Model_Strategy_Interface', get_class($instance))
             );
         }
 
@@ -191,29 +197,12 @@ class Oggetto_Opauth_Model_Opauth
     }
 
     /**
-     * Init default configs
-     *
-     * @return Oggetto_Opauth_Model_Opauth
-     */
-    protected function _initDefaultConfigs()
-    {
-        $this->_config = array(
-            'callback_transport' => 'session',
-            'path'               => '/opauth/login/',
-            'callback_url'       => Mage::getUrl('oggetto_opauth/login/callback'),
-            'security_iteration' => Mage::getStoreConfig('opauth/general/security_iteration'),
-            'security_timeout'   => Mage::getStoreConfig('opauth/general/security_timeout'),
-            'security_salt'      => Mage::getStoreConfig('opauth/general/security_salt'),
-        );
-        return $this;
-    }
-
-    /**
      * Callback response data
      *
+     * @param bool $autoRegisterStrategy auto register found strategy
      * @return array
      */
-    public function getResponseData()
+    public function getResponseData($autoRegisterStrategy = true)
     {
         $response  = array();
         $transport = $this->_config['callback_transport'];
@@ -240,7 +229,7 @@ class Oggetto_Opauth_Model_Opauth
             default:
                 break;
         }
-        if (isset($response['auth']['provider'])) {
+        if ($autoRegisterStrategy && isset($response['auth']['provider'])) {
             $this->addStrategy($response['auth']['provider']);
         }
         return $response;
@@ -276,7 +265,6 @@ class Oggetto_Opauth_Model_Opauth
         if (!isset($this->_strategyMap[$code])) {
             throw new Exception(sprintf('Unable to retrieve \'%s\' strategy instance', $code));
         }
-        $this->addStrategy($code);
         $class  = $this->_strategyMap[$code] . 'Strategy';
         $opauth = $this->getOpauthModel();
         $conf   = $opauth->env['Strategy'][$this->_strategyMap[$code]];

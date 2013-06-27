@@ -206,7 +206,11 @@ class Oggetto_Opauth_Model_ResponseHandler
             if (empty($data['provider'])) {
                 throw new Exception('Empty \'provider\' key in response info');
             }
-            $this->_provider = $this->getOpauth()->getProvider($data['provider']);
+            $opauth = $this->getOpauth();
+            if (!$opauth->hasProvider($data['provider'])) {
+                $opauth->addStrategy($data['provider']);
+            }
+            $this->_provider = $opauth->getProvider($data['provider']);
         }
         return $this->_provider;
     }
